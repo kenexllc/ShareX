@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -25,7 +25,6 @@
 
 using Microsoft.VisualBasic.FileIO;
 using ShareX.HelpersLib;
-using ShareX.Properties;
 using ShareX.UploadersLib;
 using System.Collections.Generic;
 using System.Drawing;
@@ -61,33 +60,18 @@ namespace ShareX
             }
         }
 
-        private ListView lv;
         private UploadInfoParser parser;
 
-        public UploadInfoManager(ListView listView)
+        public UploadInfoManager()
         {
-            lv = listView;
             parser = new UploadInfoParser();
         }
 
-        public void RefreshSelectedItems()
+        public void UpdateSelectedItems(IEnumerable<WorkerTask> tasks)
         {
-            if (lv != null && lv.SelectedItems != null && lv.SelectedItems.Count > 0)
+            if (tasks != null && tasks.Count() > 0)
             {
-                SelectedItems = lv.SelectedItems.Cast<ListViewItem>().Select(x => x.Tag as WorkerTask).Where(x => x != null && x.Info != null).
-                    Select(x => new UploadInfoStatus(x)).ToArray();
-            }
-            else
-            {
-                SelectedItems = null;
-            }
-        }
-
-        public void SelectItem(WorkerTask task)
-        {
-            if (task != null && task.Info != null)
-            {
-                SelectedItems = new UploadInfoStatus[] { new UploadInfoStatus(task) };
+                SelectedItems = tasks.Where(x => x != null && x.Info != null).Select(x => new UploadInfoStatus(x)).ToArray();
             }
             else
             {
@@ -149,6 +133,8 @@ namespace ShareX
         {
             if (IsItemSelected)
             {
+                SelectedItem.Update();
+
                 if (SelectedItem.IsShortenedURLExist)
                 {
                     URLHelpers.OpenURL(SelectedItem.Info.Result.ShortenedURL);
@@ -325,17 +311,9 @@ namespace ShareX
 
         public void ShowErrors()
         {
-            if (IsItemSelected && SelectedItem.Info.Result != null && SelectedItem.Info.Result.IsError)
+            if (IsItemSelected)
             {
-                string errors = SelectedItem.Info.Result.ErrorsToString();
-
-                if (!string.IsNullOrEmpty(errors))
-                {
-                    using (ErrorForm form = new ErrorForm(Resources.UploadInfoManager_ShowErrors_Upload_errors, errors, Program.LogsFilePath, Links.URL_ISSUES, false))
-                    {
-                        form.ShowDialog();
-                    }
-                }
+                SelectedItem.Task.ShowErrorWindow();
             }
         }
 
@@ -363,6 +341,11 @@ namespace ShareX
         public void EditImage()
         {
             if (IsItemSelected && SelectedItem.IsImageFile) TaskHelpers.AnnotateImageFromFile(SelectedItem.Info.FilePath);
+        }
+
+        public void AddImageEffects()
+        {
+            if (IsItemSelected && SelectedItem.IsImageFile) TaskHelpers.OpenImageEffects(SelectedItem.Info.FilePath);
         }
 
         public void DeleteFiles()
@@ -412,19 +395,29 @@ namespace ShareX
 
                 if (imageFiles.Count() > 1)
                 {
-                    TaskHelpers.OpenImageCombiner(null, imageFiles);
+                    TaskHelpers.OpenImageCombiner(imageFiles);
+                }
+            }
+        }
+
+        public void CombineImages(Orientation orientation)
+        {
+            if (IsItemSelected)
+            {
+                IEnumerable<string> imageFiles = SelectedItems.Where(x => x.IsImageFile).Select(x => x.Info.FilePath);
+
+                if (imageFiles.Count() > 1)
+                {
+                    TaskHelpers.CombineImages(imageFiles, orientation);
                 }
             }
         }
 
         public void ShowResponse()
         {
-            if (IsItemSelected && SelectedItem.Info.Result != null && !string.IsNullOrEmpty(SelectedItem.Info.Result.Response))
+            if (IsItemSelected && SelectedItem.Info.Result != null)
             {
-                using (ResponseForm form = new ResponseForm(SelectedItem.Info.Result.Response))
-                {
-                    form.ShowDialog();
-                }
+                ResponseForm.ShowInstance(SelectedItem.Info.Result);
             }
         }
 

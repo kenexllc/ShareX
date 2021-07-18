@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -34,7 +35,20 @@ namespace ShareX
     public partial class TaskThumbnailView : UserControl
     {
         public List<TaskThumbnailPanel> Panels { get; private set; }
-        public TaskThumbnailPanel SelectedPanel { get; private set; }
+        public List<TaskThumbnailPanel> SelectedPanels { get; private set; }
+
+        public TaskThumbnailPanel SelectedPanel
+        {
+            get
+            {
+                if (SelectedPanels.Count > 0)
+                {
+                    return SelectedPanels[SelectedPanels.Count - 1];
+                }
+
+                return null;
+            }
+        }
 
         private bool titleVisible = true;
 
@@ -98,16 +112,21 @@ namespace ShareX
                     {
                         panel.ThumbnailSize = thumbnailSize;
                     }
+
+                    UpdateAllThumbnails(true);
                 }
             }
         }
 
-        public delegate void TaskViewMouseEventHandler(object sender, MouseEventArgs e, WorkerTask task);
+        public delegate void TaskViewMouseEventHandler(object sender, MouseEventArgs e);
         public event TaskViewMouseEventHandler ContextMenuRequested;
+
+        public event EventHandler SelectedPanelChanged;
 
         public TaskThumbnailView()
         {
             Panels = new List<TaskThumbnailPanel>();
+            SelectedPanels = new List<TaskThumbnailPanel>();
 
             InitializeComponent();
             UpdateTheme();
@@ -120,7 +139,7 @@ namespace ShareX
 
         public void UpdateTheme()
         {
-            if (ShareXResources.UseDarkTheme)
+            if (ShareXResources.UseCustomTheme)
             {
                 BackColor = ShareXResources.Theme.BackgroundColor;
             }
@@ -138,12 +157,12 @@ namespace ShareX
         private TaskThumbnailPanel CreatePanel(WorkerTask task)
         {
             TaskThumbnailPanel panel = new TaskThumbnailPanel(task);
-            panel.MouseEnter += FlpMain_MouseEnter;
-            panel.MouseDown += (sender, e) => SelectedPanel = panel;
-            panel.MouseUp += Panel_MouseUp;
             panel.ThumbnailSize = ThumbnailSize;
             panel.TitleVisible = TitleVisible;
             panel.TitleLocation = TitleLocation;
+            panel.MouseEnter += Panel_MouseEnter;
+            panel.MouseDown += (object sender, MouseEventArgs e) => Panel_MouseDown(e, panel);
+            panel.MouseUp += Panel_MouseUp;
             return panel;
         }
 
@@ -163,6 +182,7 @@ namespace ShareX
             if (panel != null)
             {
                 Panels.Remove(panel);
+                SelectedPanels.Remove(panel);
                 flpMain.Controls.Remove(panel);
                 panel.Dispose();
             }
@@ -184,33 +204,113 @@ namespace ShareX
             }
         }
 
-        protected void OnContextMenuRequested(object sender, MouseEventArgs e, WorkerTask task)
+        public void UnselectAllPanels(TaskThumbnailPanel ignorePanel = null)
         {
-            if (ContextMenuRequested != null)
+            SelectedPanels.Clear();
+
+            foreach (TaskThumbnailPanel panel in Panels)
             {
-                ContextMenuRequested(sender, e, task);
+                if (panel != ignorePanel)
+                {
+                    panel.Selected = false;
+                }
             }
+
+            OnSelectedPanelChanged();
         }
 
-        private void FlpMain_MouseEnter(object sender, System.EventArgs e)
+        protected void OnContextMenuRequested(object sender, MouseEventArgs e)
         {
-            if (!flpMain.Focused)
+            ContextMenuRequested?.Invoke(sender, e);
+        }
+
+        protected void OnSelectedPanelChanged()
+        {
+            SelectedPanelChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void Panel_MouseEnter(object sender, EventArgs e)
+        {
+            // Workaround to handle mouse wheel scrolling in Windows 7
+            if (NativeMethods.GetForegroundWindow() == ParentForm.Handle && !flpMain.Focused)
             {
                 flpMain.Focus();
             }
         }
 
-        private void FlpMain_MouseDown(object sender, MouseEventArgs e)
+        private void Panel_MouseDown(object sender, MouseEventArgs e)
         {
-            SelectedPanel = null;
+            Panel_MouseDown(e, null);
+        }
+
+        private void Panel_MouseDown(MouseEventArgs e, TaskThumbnailPanel panel)
+        {
+            if (panel == null)
+            {
+                UnselectAllPanels();
+            }
+            else
+            {
+                if (ModifierKeys == Keys.Control)
+                {
+                    if (panel.Selected)
+                    {
+                        panel.Selected = false;
+                        SelectedPanels.Remove(panel);
+                    }
+                    else
+                    {
+                        panel.Selected = true;
+                        SelectedPanels.Add(panel);
+                    }
+                }
+                else if (ModifierKeys == Keys.Shift)
+                {
+                    if (SelectedPanels.Count > 0)
+                    {
+                        TaskThumbnailPanel firstPanel = SelectedPanels[0];
+
+                        UnselectAllPanels();
+
+                        foreach (TaskThumbnailPanel p in Panels.Range(firstPanel, panel))
+                        {
+                            p.Selected = true;
+                            SelectedPanels.Add(p);
+                        }
+                    }
+                    else
+                    {
+                        panel.Selected = true;
+                        SelectedPanels.Add(panel);
+                    }
+                }
+                else
+                {
+                    if (!panel.Selected || e.Button == MouseButtons.Left)
+                    {
+                        UnselectAllPanels(panel);
+                        panel.Selected = true;
+                        SelectedPanels.Add(panel);
+                    }
+                }
+            }
+
+            OnSelectedPanelChanged();
         }
 
         private void Panel_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
-                OnContextMenuRequested(sender, e, SelectedPanel?.Task);
+                OnContextMenuRequested(sender, e);
             }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            OnKeyDown(new KeyEventArgs(keyData));
+
+            return base.ProcessCmdKey(ref msg, keyData);
         }
     }
 }

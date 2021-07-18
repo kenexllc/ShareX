@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -103,9 +103,7 @@ namespace ShareX
             cbTrayIconProgressEnabled.Checked = Program.Settings.TrayIconProgressEnabled;
             cbTaskbarProgressEnabled.Enabled = TaskbarManager.IsPlatformSupported;
             cbTaskbarProgressEnabled.Checked = Program.Settings.TaskbarProgressEnabled;
-            cbUseDarkTheme.Checked = Program.Settings.UseDarkTheme;
-            cbExperimentalDarkTheme.Enabled = Program.Settings.UseDarkTheme;
-            cbExperimentalDarkTheme.Checked = Program.Settings.ExperimentalDarkTheme;
+            cbUseCustomTheme.Checked = Program.Settings.UseCustomTheme;
             cbUseWhiteShareXIcon.Checked = Program.Settings.UseWhiteShareXIcon;
             cbRememberMainFormPosition.Checked = Program.Settings.RememberMainFormPosition;
             cbRememberMainFormSize.Checked = Program.Settings.RememberMainFormSize;
@@ -124,7 +122,7 @@ namespace ShareX
             // Theme
             cbThemes.Items.AddRange(Program.Settings.Themes.ToArray());
             cbThemes.SelectedIndex = Program.Settings.SelectedTheme;
-            pgTheme.SelectedObject = Program.Settings.Themes[Program.Settings.SelectedTheme].Copy();
+            pgTheme.SelectedObject = Program.Settings.Themes[Program.Settings.SelectedTheme];
             UpdateThemeControls();
 
             // Integration
@@ -157,6 +155,11 @@ namespace ShareX
             cbUseCustomScreenshotsPath.Checked = Program.Settings.UseCustomScreenshotsPath;
             txtCustomScreenshotsPath.Text = Program.Settings.CustomScreenshotsPath;
             txtSaveImageSubFolderPattern.Text = Program.Settings.SaveImageSubFolderPattern;
+
+            // Settings
+            cbAutomaticallyCleanupBackupFiles.Checked = Program.Settings.AutoCleanupBackupFiles;
+            cbAutomaticallyCleanupLogFiles.Checked = Program.Settings.AutoCleanupLogFiles;
+            nudCleanupKeepFileCount.SetValue(Program.Settings.CleanupKeepFileCount);
 
             // Proxy
             cbProxyMethod.SelectedIndex = (int)Program.Settings.ProxySettings.ProxyMethod;
@@ -434,8 +437,8 @@ namespace ShareX
 
         private void UpdateThemeControls()
         {
-            cbExperimentalDarkTheme.Enabled = btnThemeAdd.Enabled = btnThemeReset.Enabled = pgTheme.Enabled = eiTheme.Enabled = Program.Settings.UseDarkTheme;
-            cbThemes.Enabled = btnThemeRemove.Enabled = btnApplyTheme.Enabled = Program.Settings.UseDarkTheme && cbThemes.Items.Count > 0;
+            btnThemeAdd.Enabled = eiTheme.Enabled = btnThemeReset.Enabled = pgTheme.Enabled = Program.Settings.UseCustomTheme;
+            cbThemes.Enabled = btnThemeRemove.Enabled = Program.Settings.UseCustomTheme && cbThemes.Items.Count > 0;
         }
 
         private void ApplySelectedTheme()
@@ -457,16 +460,9 @@ namespace ShareX
             }
         }
 
-        private void CbUseDarkTheme_CheckedChanged(object sender, EventArgs e)
+        private void CbUseCustomTheme_CheckedChanged(object sender, EventArgs e)
         {
-            Program.Settings.UseDarkTheme = cbUseDarkTheme.Checked;
-            UpdateThemeControls();
-            ApplySelectedTheme();
-        }
-
-        private void CbExperimentalDarkTheme_CheckedChanged(object sender, EventArgs e)
-        {
-            Program.Settings.ExperimentalDarkTheme = cbExperimentalDarkTheme.Checked;
+            Program.Settings.UseCustomTheme = cbUseCustomTheme.Checked;
             UpdateThemeControls();
             ApplySelectedTheme();
         }
@@ -477,7 +473,7 @@ namespace ShareX
 
             if (cbThemes.SelectedItem != null)
             {
-                pgTheme.SelectedObject = cbThemes.SelectedItem.Copy();
+                pgTheme.SelectedObject = cbThemes.SelectedItem;
             }
             else
             {
@@ -490,8 +486,7 @@ namespace ShareX
 
         private void BtnThemeAdd_Click(object sender, EventArgs e)
         {
-            ShareXTheme theme = ShareXTheme.GetDarkTheme();
-            AddTheme(theme);
+            AddTheme(ShareXTheme.DarkTheme);
         }
 
         private void BtnThemeRemove_Click(object sender, EventArgs e)
@@ -516,30 +511,6 @@ namespace ShareX
             }
         }
 
-        private void BtnThemeReset_Click(object sender, EventArgs e)
-        {
-            Program.Settings.Themes = ShareXTheme.GetPresets();
-            Program.Settings.SelectedTheme = 0;
-
-            cbThemes.Items.Clear();
-            cbThemes.Items.AddRange(Program.Settings.Themes.ToArray());
-            cbThemes.SelectedIndex = Program.Settings.SelectedTheme;
-            pgTheme.SelectedObject = Program.Settings.Themes[Program.Settings.SelectedTheme].Copy();
-        }
-
-        private void BtnApplyTheme_Click(object sender, EventArgs e)
-        {
-            int index = cbThemes.SelectedIndex;
-            if (index > -1)
-            {
-                Program.Settings.SelectedTheme = index;
-                Program.Settings.Themes[index] = (ShareXTheme)pgTheme.SelectedObject;
-                cbThemes.Items[index] = Program.Settings.Themes[index];
-                UpdateThemeControls();
-                ApplySelectedTheme();
-            }
-        }
-
         private object EiTheme_ExportRequested()
         {
             return pgTheme.SelectedObject as ShareXTheme;
@@ -548,6 +519,26 @@ namespace ShareX
         private void EiTheme_ImportRequested(object obj)
         {
             AddTheme(obj as ShareXTheme);
+        }
+
+        private void BtnThemeReset_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show(Resources.WouldYouLikeToResetThemes, "ShareX - " + Resources.Confirmation, MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+            {
+                Program.Settings.Themes = ShareXTheme.GetDefaultThemes();
+                Program.Settings.SelectedTheme = 0;
+
+                cbThemes.Items.Clear();
+                cbThemes.Items.AddRange(Program.Settings.Themes.ToArray());
+                cbThemes.SelectedIndex = Program.Settings.SelectedTheme;
+                pgTheme.SelectedObject = Program.Settings.Themes[Program.Settings.SelectedTheme];
+            }
+        }
+
+        private void pgTheme_PropertyValueChanged(object s, PropertyValueChangedEventArgs e)
+        {
+            UpdateThemeControls();
+            ApplySelectedTheme();
         }
 
         #endregion
@@ -698,41 +689,57 @@ namespace ShareX
 
         #endregion Paths
 
-        #region Export / Import
+        #region Settings
+
+        private void cbExportSettings_CheckedChanged(object sender, EventArgs e)
+        {
+            btnExport.Enabled = cbExportSettings.Checked || cbExportHistory.Checked;
+        }
+
+        private void cbExportHistory_CheckedChanged(object sender, EventArgs e)
+        {
+            btnExport.Enabled = cbExportSettings.Checked || cbExportHistory.Checked;
+        }
 
         private async void btnExport_Click(object sender, EventArgs e)
         {
-            using (SaveFileDialog sfd = new SaveFileDialog())
+            bool exportSettings = cbExportSettings.Checked;
+            bool exportHistory = cbExportHistory.Checked;
+
+            if (exportSettings || exportHistory)
             {
-                sfd.DefaultExt = "sxb";
-                sfd.FileName = $"ShareX-{Application.ProductVersion}-backup.sxb";
-                sfd.Filter = "ShareX backup (*.sxb)|*.sxb|All files (*.*)|*.*";
-
-                if (sfd.ShowDialog() == DialogResult.OK)
+                using (SaveFileDialog sfd = new SaveFileDialog())
                 {
-                    btnExport.Enabled = false;
-                    btnImport.Enabled = false;
-                    pbExportImport.Location = btnExport.Location;
-                    pbExportImport.Visible = true;
+                    sfd.DefaultExt = "sxb";
+                    sfd.FileName = $"ShareX-{Application.ProductVersion}-backup.sxb";
+                    sfd.Filter = "ShareX backup (*.sxb)|*.sxb|All files (*.*)|*.*";
 
-                    string exportPath = sfd.FileName;
-
-                    DebugHelper.WriteLine($"Export started: {exportPath}");
-
-                    await Task.Run(() =>
+                    if (sfd.ShowDialog() == DialogResult.OK)
                     {
-                        SettingManager.SaveAllSettings();
-                        SettingManager.Export(exportPath);
-                    });
+                        btnExport.Enabled = false;
+                        btnImport.Enabled = false;
+                        pbExportImport.Location = btnExport.Location;
+                        pbExportImport.Visible = true;
 
-                    if (!IsDisposed)
-                    {
-                        pbExportImport.Visible = false;
-                        btnExport.Enabled = true;
-                        btnImport.Enabled = true;
+                        string exportPath = sfd.FileName;
+
+                        DebugHelper.WriteLine($"Export started: {exportPath}");
+
+                        await Task.Run(() =>
+                        {
+                            SettingManager.SaveAllSettings();
+                            SettingManager.Export(exportPath, exportSettings, exportHistory);
+                        });
+
+                        if (!IsDisposed)
+                        {
+                            pbExportImport.Visible = false;
+                            btnExport.Enabled = true;
+                            btnImport.Enabled = true;
+                        }
+
+                        DebugHelper.WriteLine($"Export completed: {exportPath}");
                     }
-
-                    DebugHelper.WriteLine($"Export completed: {exportPath}");
                 }
             }
         }
@@ -780,7 +787,8 @@ namespace ShareX
 
         private void btnResetSettings_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show(Resources.ApplicationSettingsForm_btnResetSettings_Click_WouldYouLikeToResetShareXSettings, "ShareX", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+            if (MessageBox.Show(Resources.ApplicationSettingsForm_btnResetSettings_Click_WouldYouLikeToResetShareXSettings, "ShareX - " + Resources.Confirmation,
+                MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.Yes)
             {
                 SettingManager.ResetSettings();
                 SettingManager.SaveAllSettings();
@@ -795,7 +803,22 @@ namespace ShareX
             }
         }
 
-        #endregion Export / Import
+        private void cbAutomaticallyCleanupBackupFiles_CheckedChanged(object sender, EventArgs e)
+        {
+            Program.Settings.AutoCleanupBackupFiles = cbAutomaticallyCleanupBackupFiles.Checked;
+        }
+
+        private void cbAutomaticallyCleanupLogFiles_CheckedChanged(object sender, EventArgs e)
+        {
+            Program.Settings.AutoCleanupLogFiles = cbAutomaticallyCleanupLogFiles.Checked;
+        }
+
+        private void nudCleanupKeepFileCount_ValueChanged(object sender, EventArgs e)
+        {
+            Program.Settings.CleanupKeepFileCount = (int)nudCleanupKeepFileCount.Value;
+        }
+
+        #endregion Settings
 
         #region Proxy
 

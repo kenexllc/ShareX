@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -146,13 +146,13 @@ namespace ShareX
         {
             if (lvClipboardFormats.Items.Count > 0)
             {
-                string url = null;
+                string url;
 
                 if (lvClipboardFormats.SelectedItems.Count == 0)
                 {
                     url = lvClipboardFormats.Items[0].SubItems[1].Text;
                 }
-                else if (lvClipboardFormats.SelectedItems.Count > 0)
+                else
                 {
                     url = lvClipboardFormats.SelectedItems[0].SubItems[1].Text;
                 }

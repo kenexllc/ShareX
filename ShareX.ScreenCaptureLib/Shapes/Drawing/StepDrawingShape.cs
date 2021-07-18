@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,6 +26,7 @@
 using ShareX.HelpersLib;
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 
 namespace ShareX.ScreenCaptureLib
@@ -38,15 +39,33 @@ namespace ShareX.ScreenCaptureLib
 
         public int FontSize { get; set; }
         public int Number { get; set; }
-        public bool UseLetters { get; set; }
+        public StepType StepType { get; set; } = StepType.Numbers;
+        public bool IsTailActive { get; set; }
+
+        private Point tailPosition;
+
+        public Point TailPosition
+        {
+            get
+            {
+                return tailPosition;
+            }
+            private set
+            {
+                tailPosition = value;
+                TailNode.Position = tailPosition;
+            }
+        }
+
+        public bool TailVisible => !Rectangle.Contains(TailPosition);
+
+        internal ResizeNode TailNode => Manager.ResizeNodes[(int)NodePosition.Extra];
+
+        protected const float TailWidthMultiplier = 1f;
 
         public StepDrawingShape()
         {
             Rectangle = new Rectangle(0, 0, DefaultSize, DefaultSize);
-        }
-
-        public override void ShowNodes()
-        {
         }
 
         public override void OnCreating()
@@ -54,6 +73,32 @@ namespace ShareX.ScreenCaptureLib
             Manager.IsMoving = true;
             Point pos = InputManager.ClientMousePosition;
             Rectangle = new Rectangle(new Point(pos.X - (Rectangle.Width / 2), pos.Y - (Rectangle.Height / 2)), Rectangle.Size);
+            int tailOffset = 5;
+            TailPosition = Rectangle.Location.Add(Rectangle.Width + tailOffset, Rectangle.Height + tailOffset);
+        }
+
+        protected override void UseLightResizeNodes()
+        {
+            Manager.ResizeNodes[(int)NodePosition.Extra].Shape = NodeShape.Circle;
+        }
+
+        public override void OnNodeVisible()
+        {
+            TailNode.Position = TailPosition;
+            TailNode.Visible = true;
+        }
+
+        public override void OnNodeUpdate()
+        {
+            if (TailNode.IsDragging)
+            {
+                IsTailActive = true;
+                TailPosition = InputManager.ClientMousePosition;
+            }
+        }
+
+        public override void OnNodePositionUpdate()
+        {
         }
 
         public override void OnConfigLoad()
@@ -65,7 +110,7 @@ namespace ShareX.ScreenCaptureLib
             ShadowColor = AnnotationOptions.ShadowColor;
             ShadowOffset = AnnotationOptions.ShadowOffset;
             FontSize = AnnotationOptions.StepFontSize;
-            UseLetters = AnnotationOptions.StepUseLetters;
+            StepType = AnnotationOptions.StepType;
         }
 
         public override void OnConfigSave()
@@ -77,7 +122,7 @@ namespace ShareX.ScreenCaptureLib
             AnnotationOptions.ShadowColor = ShadowColor;
             AnnotationOptions.ShadowOffset = ShadowOffset;
             AnnotationOptions.StepFontSize = FontSize;
-            AnnotationOptions.StepUseLetters = UseLetters;
+            AnnotationOptions.StepType = StepType;
         }
 
         public override void OnDraw(Graphics g)
@@ -85,9 +130,26 @@ namespace ShareX.ScreenCaptureLib
             DrawNumber(g);
         }
 
+        private string GetText()
+        {
+            switch (StepType)
+            {
+                case StepType.LettersUppercase:
+                    return Helpers.NumberToLetters(Number);
+                case StepType.LettersLowercase:
+                    return Helpers.NumberToLetters(Number).ToLowerInvariant();
+                case StepType.RomanNumeralsUppercase:
+                    return Helpers.NumberToRomanNumeral(Number);
+                case StepType.RomanNumeralsLowercase:
+                    return Helpers.NumberToRomanNumeral(Number).ToLowerInvariant();
+                default:
+                    return Number.ToString();
+            }
+        }
+
         protected void DrawNumber(Graphics g)
         {
-            string text = UseLetters ? Helpers.NumberToLetters(Number) : Number.ToString();
+            string text = GetText();
 
             using (Font font = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold))
             {
@@ -98,7 +160,40 @@ namespace ShareX.ScreenCaptureLib
                 Point center = Rectangle.Center();
                 Rectangle = new Rectangle(center.X - (maxSize / 2) - padding, center.Y - (maxSize / 2) - padding, maxSize + (padding * 2), maxSize + (padding * 2));
 
-                DrawEllipse(g);
+                if (Shadow)
+                {
+                    if (IsBorderVisible)
+                    {
+                        DrawEllipse(g, ShadowColor, BorderSize, BorderStyle, Color.Transparent, Rectangle.LocationOffset(ShadowOffset));
+                    }
+                    else if (FillColor.A == 255)
+                    {
+                        DrawEllipse(g, Color.Transparent, 0, BorderStyle, ShadowColor, Rectangle.LocationOffset(ShadowOffset));
+                    }
+                }
+
+                if (IsTailActive && TailVisible)
+                {
+                    if (Shadow)
+                    {
+                        DrawTail(g, ShadowColor, Rectangle.Offset(BorderSize / 2).LocationOffset(ShadowOffset), TailPosition.Add(ShadowOffset));
+                    }
+
+                    Color tailColor;
+
+                    if (IsBorderVisible)
+                    {
+                        tailColor = BorderColor;
+                    }
+                    else
+                    {
+                        tailColor = FillColor;
+                    }
+
+                    DrawTail(g, tailColor, Rectangle.Offset(BorderSize / 2), TailPosition);
+                }
+
+                DrawEllipse(g, BorderColor, BorderSize, BorderStyle, FillColor, Rectangle);
 
                 if (Shadow)
                 {
@@ -121,9 +216,56 @@ namespace ShareX.ScreenCaptureLib
             }
         }
 
+        private void DrawTail(Graphics g, Color tailColor, Rectangle rectangle, Point tailPosition)
+        {
+            using (GraphicsPath gpTail = CreateTailPath(rectangle, tailPosition))
+            {
+                if (gpTail != null)
+                {
+                    g.SmoothingMode = SmoothingMode.HighQuality;
+
+                    using (Brush brush = new SolidBrush(tailColor))
+                    {
+                        g.FillPath(brush, gpTail);
+                    }
+
+                    g.SmoothingMode = SmoothingMode.None;
+                }
+            }
+        }
+
+        public override void Move(int x, int y)
+        {
+            base.Move(x, y);
+
+            TailPosition = TailPosition.Add(x, y);
+        }
+
         public override void Resize(int x, int y, bool fromBottomRight)
         {
             Move(x, y);
+        }
+
+        protected GraphicsPath CreateTailPath(Rectangle rect, Point tailPosition)
+        {
+            GraphicsPath gpTail = new GraphicsPath();
+            Point center = rect.Center();
+            int rectAverageSize = (rect.Width + rect.Height) / 2;
+            int tailWidth = (int)(TailWidthMultiplier * rectAverageSize);
+            tailWidth = Math.Min(Math.Min(tailWidth, rect.Width), rect.Height);
+            int tailOrigin = tailWidth / 2;
+            int tailLength = (int)MathHelpers.Distance(center, tailPosition);
+            gpTail.AddLine(0, -tailOrigin, 0, tailOrigin);
+            gpTail.AddLine(0, tailOrigin, tailLength, 0);
+            gpTail.CloseFigure();
+            using (Matrix matrix = new Matrix())
+            {
+                matrix.Translate(center.X, center.Y);
+                float tailDegree = MathHelpers.LookAtDegree(center, tailPosition);
+                matrix.Rotate(tailDegree);
+                gpTail.Transform(matrix);
+            }
+            return gpTail;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -32,6 +32,8 @@ namespace ShareX.HelpersLib
 {
     public partial class HashCheckForm : Form
     {
+        public bool CompareTwoFiles { get; private set; }
+
         private HashCheck hashCheck;
         private Translator translator;
 
@@ -40,12 +42,12 @@ namespace ShareX.HelpersLib
             InitializeComponent();
             ShareXResources.ApplyTheme(this);
 
+            UpdateCompareControls();
             cbHashType.Items.AddRange(Helpers.GetEnumDescriptions<HashType>());
             cbHashType.SelectedIndex = (int)HashType.SHA1;
 
             hashCheck = new HashCheck();
             hashCheck.FileCheckProgressChanged += fileCheck_FileCheckProgressChanged;
-            hashCheck.FileCheckCompleted += fileCheck_FileCheckCompleted;
 
             translator = new Translator();
         }
@@ -74,12 +76,41 @@ namespace ShareX.HelpersLib
             }
         }
 
+        private void UpdateCompareControls()
+        {
+            lblFilePath2.Enabled = txtFilePath2.Enabled = btnFilePathBrowse2.Enabled = CompareTwoFiles;
+
+            if (CompareTwoFiles)
+            {
+                lblResult.Text = Resources.ResultOfFirstFile;
+                lblTarget.Text = Resources.ResultOfSecondFile;
+            }
+            else
+            {
+                lblResult.Text = Resources.Result;
+                lblTarget.Text = Resources.Target;
+            }
+
+            txtTarget.ReadOnly = CompareTwoFiles;
+        }
+
         private void btnFilePathBrowse_Click(object sender, EventArgs e)
         {
             Helpers.BrowseFile(txtFilePath);
         }
 
-        private void btnStartHashCheck_Click(object sender, EventArgs e)
+        private void btnFilePathBrowse2_Click(object sender, EventArgs e)
+        {
+            Helpers.BrowseFile(txtFilePath2);
+        }
+
+        private void cbCompareTwoFiles_CheckedChanged(object sender, EventArgs e)
+        {
+            CompareTwoFiles = cbCompareTwoFiles.Checked;
+            UpdateCompareControls();
+        }
+
+        private async void btnStartHashCheck_Click(object sender, EventArgs e)
         {
             if (hashCheck.IsWorking)
             {
@@ -87,14 +118,37 @@ namespace ShareX.HelpersLib
             }
             else
             {
+                btnStartHashCheck.Text = Resources.Stop;
+                pbProgress.Value = 0;
+                txtResult.Text = "";
+
+                if (CompareTwoFiles)
+                {
+                    txtTarget.Text = "";
+                }
+
                 HashType hashType = (HashType)cbHashType.SelectedIndex;
 
-                if (hashCheck.Start(txtFilePath.Text, hashType))
+                string filePath = txtFilePath.Text;
+                string result = await hashCheck.Start(filePath, hashType);
+
+                if (!string.IsNullOrEmpty(result))
                 {
-                    btnStartHashCheck.Text = Resources.Stop;
-                    pbProgress.Value = 0;
-                    txtResult.Text = "";
+                    txtResult.Text = result.ToUpperInvariant();
+
+                    if (CompareTwoFiles)
+                    {
+                        string filePath2 = txtFilePath2.Text;
+                        string result2 = await hashCheck.Start(filePath2, hashType);
+
+                        if (!string.IsNullOrEmpty(result2))
+                        {
+                            txtTarget.Text = result2.ToUpperInvariant();
+                        }
+                    }
                 }
+
+                btnStartHashCheck.Text = Resources.Start;
             }
         }
 
@@ -104,12 +158,6 @@ namespace ShareX.HelpersLib
             lblProgressPercentage.Text = (int)progress + "%";
         }
 
-        private void fileCheck_FileCheckCompleted(string result, bool cancelled)
-        {
-            btnStartHashCheck.Text = Resources.Start;
-            txtResult.Text = result.ToUpperInvariant();
-        }
-
         private void txtResult_TextChanged(object sender, EventArgs e)
         {
             UpdateResult();
@@ -117,14 +165,6 @@ namespace ShareX.HelpersLib
 
         private void txtTarget_TextChanged(object sender, EventArgs e)
         {
-            string target = txtTarget.Text;
-
-            if (!string.IsNullOrEmpty(target))
-            {
-                txtTarget.Text = target.RemoveWhiteSpaces().ToUpperInvariant();
-                txtTarget.Select(txtTarget.TextLength, 0);
-            }
-
             UpdateResult();
         }
 
@@ -133,6 +173,14 @@ namespace ShareX.HelpersLib
             if (e.Control && e.KeyCode == Keys.A)
             {
                 txtResult.SelectAll();
+            }
+        }
+
+        private void txtTarget_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                txtTarget.SelectAll();
             }
         }
 
@@ -150,14 +198,9 @@ namespace ShareX.HelpersLib
 
         private void tpFileHashCheck_DragDrop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop, false))
+            if (e.Data.GetDataPresent(DataFormats.FileDrop, false) && e.Data.GetData(DataFormats.FileDrop, false) is string[] files && files.Length > 0)
             {
-                string[] files = e.Data.GetData(DataFormats.FileDrop, false) as string[];
-
-                if (files != null && files.Length > 0)
-                {
-                    txtFilePath.Text = files[0];
-                }
+                txtFilePath.Text = files[0];
             }
         }
 

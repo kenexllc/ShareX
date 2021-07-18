@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -27,6 +27,7 @@ using ShareX.HelpersLib;
 using ShareX.HistoryLib;
 using ShareX.UploadersLib;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -88,6 +89,7 @@ namespace ShareX
         public string FileName { get; set; }
         public string ThumbnailFilePath { get; set; }
         public EDataType DataType { get; set; }
+        public ImageInfo ImageInfo { get; set; }
 
         public EDataType UploadDestination
         {
@@ -160,6 +162,31 @@ namespace ShareX
             Result = new UploadResult();
         }
 
+        public Dictionary<string, string> GetTags()
+        {
+            if (ImageInfo != null)
+            {
+                Dictionary<string, string> tags = new Dictionary<string, string>();
+
+                if (!string.IsNullOrEmpty(ImageInfo.WindowTitle))
+                {
+                    tags.Add("WindowTitle", ImageInfo.WindowTitle);
+                }
+
+                if (!string.IsNullOrEmpty(ImageInfo.ProcessName))
+                {
+                    tags.Add("ProcessName", ImageInfo.ProcessName);
+                }
+
+                if (tags.Count > 0)
+                {
+                    return tags;
+                }
+            }
+
+            return null;
+        }
+
         public override string ToString()
         {
             string text = Result.ToString();
@@ -176,15 +203,16 @@ namespace ShareX
         {
             return new HistoryItem
             {
-                Filename = FileName,
-                Filepath = FilePath,
+                FileName = FileName,
+                FilePath = FilePath,
                 DateTime = TaskEndTime,
                 Type = DataType.ToString(),
                 Host = UploaderHost,
                 URL = Result.URL,
                 ThumbnailURL = Result.ThumbnailURL,
                 DeletionURL = Result.DeletionURL,
-                ShortenedURL = Result.ShortenedURL
+                ShortenedURL = Result.ShortenedURL,
+                Tags = GetTags()
             };
         }
     }

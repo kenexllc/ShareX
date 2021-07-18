@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -61,9 +61,7 @@ namespace ShareX.HelpersLib
 
                     if (iconHandle != IntPtr.Zero)
                     {
-                        IconInfo iconInfo;
-
-                        if (NativeMethods.GetIconInfo(iconHandle, out iconInfo))
+                        if (NativeMethods.GetIconInfo(iconHandle, out IconInfo iconInfo))
                         {
                             Position = new Point(Position.X - iconInfo.xHotspot, Position.Y - iconInfo.yHotspot);
 

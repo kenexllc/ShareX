@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -111,15 +112,17 @@ namespace ShareX.ScreenCaptureLib
 
         protected void DrawFreehand(Graphics g)
         {
+            int borderSize = Math.Max(BorderSize, 1);
+
             if (Shadow)
             {
-                DrawFreehand(g, ShadowColor, BorderSize, positions.Select(x => x.Add(ShadowOffset)).ToArray());
+                DrawFreehand(g, ShadowColor, borderSize, BorderStyle, positions.Select(x => x.Add(ShadowOffset)).ToArray());
             }
 
-            DrawFreehand(g, BorderColor, BorderSize, positions.ToArray());
+            DrawFreehand(g, BorderColor, borderSize, BorderStyle, positions.ToArray());
         }
 
-        protected void DrawFreehand(Graphics g, Color borderColor, int borderSize, Point[] points)
+        protected void DrawFreehand(Graphics g, Color borderColor, int borderSize, BorderStyle borderStyle, Point[] points)
         {
             if (points.Length > 0 && borderSize > 0 && borderColor.A > 0)
             {
@@ -142,8 +145,13 @@ namespace ShareX.ScreenCaptureLib
                 }
                 else
                 {
-                    using (Pen pen = new Pen(borderColor, borderSize) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+                    using (Pen pen = new Pen(borderColor, borderSize))
                     {
+                        pen.StartCap = LineCap.Round;
+                        pen.EndCap = LineCap.Round;
+                        pen.LineJoin = LineJoin.Round;
+                        pen.DashStyle = (DashStyle)borderStyle;
+
                         g.DrawLines(pen, points.ToArray());
                     }
                 }

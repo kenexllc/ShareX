@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 #endregion License Information (GPL v3)
 
 using ShareX.HelpersLib;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
@@ -136,6 +137,8 @@ namespace ShareX.ScreenCaptureLib
 
         protected void DrawLine(Graphics g)
         {
+            int borderSize = Math.Max(BorderSize, 1);
+
             if (Shadow)
             {
                 Point[] shadowPoints = new Point[Points.Length];
@@ -145,13 +148,13 @@ namespace ShareX.ScreenCaptureLib
                     shadowPoints[i] = Points[i].Add(ShadowOffset);
                 }
 
-                DrawLine(g, ShadowColor, BorderSize, shadowPoints);
+                DrawLine(g, ShadowColor, borderSize, BorderStyle, shadowPoints);
             }
 
-            DrawLine(g, BorderColor, BorderSize, Points);
+            DrawLine(g, BorderColor, borderSize, BorderStyle, Points);
         }
 
-        protected void DrawLine(Graphics g, Color borderColor, int borderSize, Point[] points)
+        protected void DrawLine(Graphics g, Color borderColor, int borderSize, BorderStyle borderStyle, Point[] points)
         {
             if (borderSize > 0 && borderColor.A > 0)
             {
@@ -162,7 +165,7 @@ namespace ShareX.ScreenCaptureLib
                     g.PixelOffsetMode = PixelOffsetMode.Half;
                 }
 
-                using (Pen pen = CreatePen(borderColor, borderSize))
+                using (Pen pen = CreatePen(borderColor, borderSize, borderStyle))
                 {
                     if (CenterNodeActive && points.Length > 2)
                     {
@@ -179,13 +182,14 @@ namespace ShareX.ScreenCaptureLib
             }
         }
 
-        protected virtual Pen CreatePen(Color borderColor, int borderSize)
+        protected virtual Pen CreatePen(Color borderColor, int borderSize, BorderStyle borderStyle)
         {
             return new Pen(borderColor, borderSize)
             {
                 StartCap = LineCap.Round,
                 EndCap = LineCap.Round,
-                LineJoin = LineJoin.Round
+                LineJoin = LineJoin.Round,
+                DashStyle = (DashStyle)borderStyle
             };
         }
 

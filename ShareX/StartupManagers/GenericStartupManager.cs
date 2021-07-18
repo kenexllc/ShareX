@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -41,10 +41,8 @@ namespace ShareX
             {
                 if (ShortcutHelpers.CheckShortcut(Environment.SpecialFolder.Startup, StartupTargetPath))
                 {
-                    byte[] status = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder",
-                        "ShareX.lnk", null) as byte[];
-
-                    if (status != null && status.Length > 0 && status[0] == 3)
+                    if (Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder",
+                        "ShareX.lnk", null) is byte[] status && status.Length > 0 && status[0] == 3)
                     {
                         return StartupState.DisabledByUser;
                     }

@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -135,9 +135,7 @@ namespace ShareX.HelpersLib
 
         public static Point GetCursorPosition()
         {
-            POINT point;
-
-            if (NativeMethods.GetCursorPos(out point))
+            if (NativeMethods.GetCursorPos(out POINT point))
             {
                 return (Point)point;
             }
@@ -311,14 +309,9 @@ namespace ShareX.HelpersLib
         {
             Rectangle rect = Rectangle.Empty;
 
-            if (NativeMethods.IsDWMEnabled())
+            if (NativeMethods.IsDWMEnabled() && NativeMethods.GetExtendedFrameBounds(handle, out Rectangle tempRect))
             {
-                Rectangle tempRect;
-
-                if (NativeMethods.GetExtendedFrameBounds(handle, out tempRect))
-                {
-                    rect = tempRect;
-                }
+                rect = tempRect;
             }
 
             if (rect.IsEmpty)

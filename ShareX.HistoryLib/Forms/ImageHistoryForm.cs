@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -40,6 +40,7 @@ namespace ShareX.HistoryLib
         public string HistoryPath { get; private set; }
         public ImageHistorySettings Settings { get; private set; }
         public string SearchText { get; set; }
+        public bool SearchInTags { get; set; } = true;
 
         private HistoryManager history;
         private HistoryItemManager him;
@@ -56,11 +57,11 @@ namespace ShareX.HistoryLib
             ilvImages.View = (View)Settings.ViewMode;
             ilvImages.ThumbnailSize = Settings.ThumbnailSize;
 
-            if (ShareXResources.ExperimentalDarkTheme)
+            if (ShareXResources.UseCustomTheme)
             {
                 ilvImages.BorderStyle = BorderStyle.None;
-                ilvImages.Colors.BackColor = ShareXResources.Theme.LightBackgroundColor;
-                ilvImages.Colors.BorderColor = ShareXResources.Theme.BorderColor;
+                ilvImages.Colors.BackColor = ShareXResources.Theme.DarkBackgroundColor;
+                ilvImages.Colors.BorderColor = ShareXResources.Theme.DarkBackgroundColor;
                 ilvImages.Colors.ForeColor = ShareXResources.Theme.TextColor;
                 ilvImages.Colors.SelectedForeColor = ShareXResources.Theme.TextColor;
                 ilvImages.Colors.UnFocusedForeColor = ShareXResources.Theme.TextColor;
@@ -84,14 +85,14 @@ namespace ShareX.HistoryLib
 
         private void UpdateTitle(int total, int filtered)
         {
-            Text = $"{defaultTitle} (Total: {total.ToString("N0")} - Filtered: {filtered.ToString("N0")})";
+            Text = $"{defaultTitle} (Total: {total:N0} - Filtered: {filtered:N0})";
         }
 
         private void RefreshHistoryItems()
         {
             UpdateSearchText();
             ilvImages.Items.Clear();
-            ImageListViewItem[] ilvItems = GetHistoryItems().Select(hi => new ImageListViewItem(hi.Filepath) { Tag = hi }).ToArray();
+            ImageListViewItem[] ilvItems = GetHistoryItems().Select(hi => new ImageListViewItem(hi.FilePath) { Tag = hi }).ToArray();
             ilvImages.Items.AddRange(ilvItems);
         }
 
@@ -113,7 +114,7 @@ namespace ShareX.HistoryLib
         {
             if (history == null)
             {
-                history = new HistoryManager(HistoryPath);
+                history = new HistoryManagerJSON(HistoryPath);
             }
 
             List<HistoryItem> historyItems = history.GetHistoryItems();
@@ -124,16 +125,16 @@ namespace ShareX.HistoryLib
             if (!string.IsNullOrEmpty(SearchText))
             {
                 string pattern = Regex.Escape(SearchText).Replace("\\?", ".").Replace("\\*", ".*");
-                regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                regex = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             }
 
             for (int i = historyItems.Count - 1; i >= 0; i--)
             {
                 HistoryItem hi = historyItems[i];
 
-                if (!string.IsNullOrEmpty(hi.Filepath) && Helpers.IsImageFile(hi.Filepath) &&
-                    (regex == null || regex.IsMatch(hi.Filename)) &&
-                    (!Settings.FilterMissingFiles || File.Exists(hi.Filepath)))
+                if (!string.IsNullOrEmpty(hi.FilePath) && Helpers.IsImageFile(hi.FilePath) &&
+                    (regex == null || regex.IsMatch(hi.FileName) || (SearchInTags && hi.Tags != null && hi.Tags.Any(tag => regex.IsMatch(tag.Value)))) &&
+                    (!Settings.FilterMissingFiles || File.Exists(hi.FilePath)))
                 {
                     filteredHistoryItems.Add(hi);
 
@@ -175,7 +176,7 @@ namespace ShareX.HistoryLib
 
         private void ilvImages_SelectionChanged(object sender, EventArgs e)
         {
-            him.RefreshInfo();
+            him.UpdateSelectedHistoryItem();
         }
 
         private void ilvImages_ItemDoubleClick(object sender, ItemClickEventArgs e)

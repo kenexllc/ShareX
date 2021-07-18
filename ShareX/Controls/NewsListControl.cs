@@ -2,7 +2,7 @@
 
 /*
     ShareX - A program that allows you to take screenshots and share any file type
-    Copyright (c) 2007-2019 ShareX Team
+    Copyright (c) 2007-2020 ShareX Team
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -47,7 +47,7 @@ namespace ShareX
 
         public void UpdateTheme()
         {
-            if (ShareXResources.UseDarkTheme)
+            if (ShareXResources.UseCustomTheme)
             {
                 dgvNews.BackgroundColor = ShareXResources.Theme.BackgroundColor;
                 dgvNews.DefaultCellStyle.BackColor = dgvNews.DefaultCellStyle.SelectionBackColor = ShareXResources.Theme.BackgroundColor;
@@ -69,7 +69,7 @@ namespace ShareX
             foreach (DataGridViewRow row in dgvNews.Rows)
             {
                 row.Cells[2].Style.ForeColor = row.Cells[2].Style.SelectionForeColor =
-                    ShareXResources.UseDarkTheme ? ShareXResources.Theme.TextColor : SystemColors.ControlText;
+                    ShareXResources.UseCustomTheme ? ShareXResources.Theme.TextColor : SystemColors.ControlText;
             }
         }
 
@@ -106,10 +106,7 @@ namespace ShareX
 
         protected void OnNewsLoaded()
         {
-            if (NewsLoaded != null)
-            {
-                NewsLoaded(this, EventArgs.Empty);
-            }
+            NewsLoaded?.Invoke(this, EventArgs.Empty);
         }
 
         public void MarkRead()
@@ -167,8 +164,7 @@ namespace ShareX
         {
             foreach (DataGridViewRow row in dgvNews.Rows)
             {
-                NewsItem newsItem = row.Tag as NewsItem;
-                if (newsItem != null && newsItem.IsUnread)
+                if (row.Tag is NewsItem newsItem && newsItem.IsUnread)
                 {
                     row.Cells[0].Style.BackColor = row.Cells[0].Style.SelectionBackColor = Color.LimeGreen;
                 }
@@ -184,12 +180,11 @@ namespace ShareX
             if (e.ColumnIndex == 2)
             {
                 DataGridViewRow row = dgvNews.Rows[e.RowIndex];
-                NewsItem newsItem = row.Tag as NewsItem;
-                if (newsItem != null && !string.IsNullOrEmpty(newsItem.URL))
+                if (row.Tag is NewsItem newsItem && !string.IsNullOrEmpty(newsItem.URL))
                 {
                     dgvNews.Cursor = Cursors.Hand;
                     row.Cells[e.ColumnIndex].Style.ForeColor = row.Cells[e.ColumnIndex].Style.SelectionForeColor =
-                        ShareXResources.UseDarkTheme ? Color.White : SystemColors.HotTrack;
+                        ShareXResources.UseCustomTheme ? Color.White : SystemColors.HotTrack;
                 }
             }
         }
@@ -199,11 +194,10 @@ namespace ShareX
             if (e.ColumnIndex == 2)
             {
                 DataGridViewRow row = dgvNews.Rows[e.RowIndex];
-                NewsItem newsItem = row.Tag as NewsItem;
-                if (newsItem != null && !string.IsNullOrEmpty(newsItem.URL))
+                if (row.Tag is NewsItem newsItem && !string.IsNullOrEmpty(newsItem.URL))
                 {
                     row.Cells[e.ColumnIndex].Style.ForeColor = row.Cells[e.ColumnIndex].Style.SelectionForeColor =
-                        ShareXResources.UseDarkTheme ? ShareXResources.Theme.TextColor : SystemColors.ControlText;
+                        ShareXResources.UseCustomTheme ? ShareXResources.Theme.TextColor : SystemColors.ControlText;
                 }
             }
 
@@ -215,8 +209,7 @@ namespace ShareX
             if (e.Button == MouseButtons.Left && e.ColumnIndex == 2)
             {
                 DataGridViewRow row = dgvNews.Rows[e.RowIndex];
-                NewsItem newsItem = row.Tag as NewsItem;
-                if (newsItem != null && URLHelpers.IsValidURL(newsItem.URL))
+                if (row.Tag is NewsItem newsItem && URLHelpers.IsValidURL(newsItem.URL))
                 {
                     URLHelpers.OpenURL(newsItem.URL);
                 }

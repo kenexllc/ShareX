@@ -140,15 +140,6 @@ namespace ShareX.UploadersLib.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Response parse failed..
-        /// </summary>
-        internal static string CustomFileUploader_Upload_Response_parse_failed_ {
-            get {
-                return ResourceManager.GetString("CustomFileUploader_Upload_Response_parse_failed_", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to &quot;File form name&quot; must be configured..
         /// </summary>
         internal static string CustomUploaderItem_GetFileFormName_FileFormNameMustBeConfigured {
@@ -192,6 +183,15 @@ namespace ShareX.UploadersLib.Properties {
         internal static string DuplicateNameNotAllowed {
             get {
                 return ResourceManager.GetString("DuplicateNameNotAllowed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export failed..
+        /// </summary>
+        internal static string ExportFailed {
+            get {
+                return ResourceManager.GetString("ExportFailed", resourceCulture);
             }
         }
         
@@ -282,6 +282,15 @@ namespace ShareX.UploadersLib.Properties {
             get {
                 object obj = ResourceManager.GetObject("GoogleDrive", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to My drive.
+        /// </summary>
+        internal static string GoogleDrive_MyDrive_My_drive {
+            get {
+                return ResourceManager.GetString("GoogleDrive_MyDrive_My_drive", resourceCulture);
             }
         }
         
@@ -394,6 +403,15 @@ namespace ShareX.UploadersLib.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Logged in as {0}..
+        /// </summary>
+        internal static string LoggedInAs0 {
+            get {
+                return ResourceManager.GetString("LoggedInAs0", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap mail {
@@ -420,6 +438,16 @@ namespace ShareX.UploadersLib.Properties {
             get {
                 object obj = ResourceManager.GetObject("Mega", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap navigation_270_button_white {
+            get {
+                object obj = ResourceManager.GetObject("navigation_270_button_white", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         
@@ -959,6 +987,16 @@ namespace ShareX.UploadersLib.Properties {
             get {
                 object obj = ResourceManager.GetObject("YouTube", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap ZeroWidthShortener {
+            get {
+                object obj = ResourceManager.GetObject("ZeroWidthShortener", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
     }

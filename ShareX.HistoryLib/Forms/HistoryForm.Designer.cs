@@ -38,8 +38,10 @@
             this.chDateTime = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.chFilename = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.chURL = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.btnShowStats = new System.Windows.Forms.Button();
+            this.nudMaxItemCount = new System.Windows.Forms.NumericUpDown();
             this.pbThumbnail = new ShareX.HelpersLib.MyPictureBox();
+            this.btnShowStats = new System.Windows.Forms.Button();
+            this.lblMaxItemCount = new System.Windows.Forms.Label();
             this.gbFilters = new System.Windows.Forms.GroupBox();
             this.lblURLFilter = new System.Windows.Forms.Label();
             this.txtURLFilter = new System.Windows.Forms.TextBox();
@@ -61,6 +63,7 @@
             this.scMain.Panel2.SuspendLayout();
             this.scMain.SuspendLayout();
             this.pStats.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nudMaxItemCount)).BeginInit();
             this.gbFilters.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -77,8 +80,10 @@
             // 
             // scMain.Panel2
             // 
-            this.scMain.Panel2.Controls.Add(this.btnShowStats);
+            this.scMain.Panel2.Controls.Add(this.nudMaxItemCount);
             this.scMain.Panel2.Controls.Add(this.pbThumbnail);
+            this.scMain.Panel2.Controls.Add(this.btnShowStats);
+            this.scMain.Panel2.Controls.Add(this.lblMaxItemCount);
             this.scMain.Panel2.Controls.Add(this.gbFilters);
             this.scMain.SplitterColor = System.Drawing.Color.White;
             this.scMain.SplitterLineColor = System.Drawing.Color.FromArgb(((int)(((byte)(189)))), ((int)(((byte)(189)))), ((int)(((byte)(189)))));
@@ -133,12 +138,16 @@
             // 
             resources.ApplyResources(this.chURL, "chURL");
             // 
-            // btnShowStats
+            // nudMaxItemCount
             // 
-            resources.ApplyResources(this.btnShowStats, "btnShowStats");
-            this.btnShowStats.Name = "btnShowStats";
-            this.btnShowStats.UseVisualStyleBackColor = true;
-            this.btnShowStats.Click += new System.EventHandler(this.BtnShowStats_Click);
+            resources.ApplyResources(this.nudMaxItemCount, "nudMaxItemCount");
+            this.nudMaxItemCount.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.nudMaxItemCount.Name = "nudMaxItemCount";
+            this.nudMaxItemCount.ValueChanged += new System.EventHandler(this.nudMaxItemCount_ValueChanged);
             // 
             // pbThumbnail
             // 
@@ -150,6 +159,18 @@
             this.pbThumbnail.Name = "pbThumbnail";
             this.pbThumbnail.PictureBoxBackColor = System.Drawing.SystemColors.Control;
             this.pbThumbnail.ShowImageSizeLabel = true;
+            // 
+            // btnShowStats
+            // 
+            resources.ApplyResources(this.btnShowStats, "btnShowStats");
+            this.btnShowStats.Name = "btnShowStats";
+            this.btnShowStats.UseVisualStyleBackColor = true;
+            this.btnShowStats.Click += new System.EventHandler(this.BtnShowStats_Click);
+            // 
+            // lblMaxItemCount
+            // 
+            resources.ApplyResources(this.lblMaxItemCount, "lblMaxItemCount");
+            this.lblMaxItemCount.Name = "lblMaxItemCount";
             // 
             // gbFilters
             // 
@@ -181,6 +202,7 @@
             // 
             resources.ApplyResources(this.txtURLFilter, "txtURLFilter");
             this.txtURLFilter.Name = "txtURLFilter";
+            this.txtURLFilter.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtURLFilter_KeyDown);
             // 
             // lblFilenameFilter
             // 
@@ -256,11 +278,12 @@
             // 
             resources.ApplyResources(this.txtFilenameFilter, "txtFilenameFilter");
             this.txtFilenameFilter.Name = "txtFilenameFilter";
+            this.txtFilenameFilter.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtFilenameFilter_KeyDown);
             // 
             // HistoryForm
             // 
             resources.ApplyResources(this, "$this");
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.Controls.Add(this.scMain);
             this.KeyPreview = true;
@@ -270,9 +293,11 @@
             this.Resize += new System.EventHandler(this.HistoryForm_Resize);
             this.scMain.Panel1.ResumeLayout(false);
             this.scMain.Panel2.ResumeLayout(false);
+            this.scMain.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.scMain)).EndInit();
             this.scMain.ResumeLayout(false);
             this.pStats.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.nudMaxItemCount)).EndInit();
             this.gbFilters.ResumeLayout(false);
             this.gbFilters.PerformLayout();
             this.ResumeLayout(false);
@@ -307,5 +332,7 @@
         private System.Windows.Forms.Button btnShowStats;
         private System.Windows.Forms.RichTextBox rtbStats;
         private System.Windows.Forms.Panel pStats;
+        private System.Windows.Forms.Label lblMaxItemCount;
+        private System.Windows.Forms.NumericUpDown nudMaxItemCount;
     }
 }
